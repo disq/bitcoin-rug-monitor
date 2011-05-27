@@ -159,12 +159,11 @@ foreach($stacks as $ds=>$dsdata)
 			}
 
 		$cdef[] = 'CDEF:'.$ds.'u'.$rigid.'='.implode(',',$tmp);
-		$cdef[] = 'VDEF:'.$ds.'x'.$rigid.'='.$ds.'u'.$rigid.',LAST';
 
 		$col = getColor($first);
 		$gr[] = 'AREA:'.$ds.'u'.$rigid.$col.'C0:'.($first?'':':STACK');
 		$gr2[] = 'LINE2:'.$ds.'u'.$rigid.$col.':"'.$rig['nameP'].'"'.($first?'':':STACK');
-		$gr2[] = 'GPRINT:'.$ds.'x'.$rigid.':"%4.2lf'.$dsdata[1].'\c"';
+		$gr2[] = 'GPRINT:'.$ds.'u'.$rigid.':MAX:"%4.2lf'.$dsdata[1].'\c"';
 
 		$first = false;
 
