@@ -255,7 +255,7 @@ foreach($allcfg as $rig)
 		VDEF:templ=temp,LAST
 		VDEF:tempa=temp,AVERAGE
 		VDEF:loadl=load,LAST
-		VDEF:loada=load,AVERAGE';
+		VDEF:loada=load,AVERAGE ';
 
 		if ($fan) $data .= '
 		LINE2:fan#1F77B4:" Fan"
