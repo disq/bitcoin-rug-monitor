@@ -1,0 +1,40 @@
+Mining Rug (The name's not a typo. Well, it was at some point, but this one's intentional)
+
+Requirements:
+
+1. php-cli
+2. rrdtool
+3. aticonfig (won't work on windows, sorry)
+
+No webserver required. But ideally you want to access the graphs/ dir from the web somehow :)
+
+Setup:
+
+1. Run gen-config.php to generate a config.json
+2. Optionally edit config.json to rename devices and your rug name (You can do this later)
+3. To get the hashrate from Phoenix Miner, apply the supplied diff with "patch -p2 < logtotext.diff" in the Phoenix dir (Tested with 1.47) and run each of your miners with "-t /tmp/<unique-name>" parameter.
+Other miners are not supported out of the box. But you can add support for them (see getStatus() in lib/query.php)
+You could set status_type to "hashrate" and point status_file to a file with the current hashrate in it, though. Last modified time is read from the filesystem.
+It won't accept files modified more than 3 seconds ago.
+
+4. Edit config.json to to set status_file to path to the file in step 3
+
+5. Run getstatus.php and see if it spits out current information. If it doesn't, re-edit the config or check if aticonfig works in the system.
+
+6. Run gen-rrd.php to create the rrd files in rrd/
+
+7. Run update.php this time, and look for error messages.
+
+8. Setup cron to execute update.php each minute. Example:
+
+$ crontab -e
+add "* * * * * ~/rug-monitor/update.php >/tmp/monitor-update.out 2>&1" to end of the file, add a newline as well
+
+9. Run gen-graph.php each time you want to generate graphs in graphs/
+
+10. You can run "gen-graph.php all" to generate weekly and monthly graphs as well as separate graphs for each day in the last week.
+
+11. If you want multi rig graphs, see the copy-data.sh script in other-rigs/. You basically need to fetch rrd files and the config.json from each of your rugs.
+
+
+Good luck!

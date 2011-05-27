@@ -1,0 +1,56 @@
+diff -ur phoenix-1.47/ConsoleLogger.py phoenix-1.47-modified/ConsoleLogger.py
+--- phoenix-1.47/ConsoleLogger.py	2011-05-13 06:43:53.000000000 +0300
++++ phoenix-1.47-modified/ConsoleLogger.py	2011-05-26 20:27:40.000000000 +0300
+@@ -47,9 +47,10 @@
+     
+     UPDATE_TIME = 1.0
+     
+-    def __init__(self, verbose=False):
++    def __init__(self, verbose=False, logtotext=None):
+         self.verbose = verbose
+         self.lastUpdate = time() - 1
++        self.logtotext = logtotext
+         self.rate = 0
+         self.accepted = 0
+         self.invalid = 0
+@@ -119,6 +120,10 @@
+                 "[" + str(self.accepted) + " Accepted] "
+                 "[" + str(self.invalid) + " Rejected]" + type)
+             self.say(status)
++            if(self.logtotext != None):
++                fileHandle = open (self.logtotext, 'w')
++                fileHandle.write(datetime.now().strftime(self.TIME_FORMAT) + ' ' + status)
++                fileHandle.close()
+             self.lastUpdate = time()
+         
+     def say(self, message, newLine=False, hideTimestamp=False):
+Binary files phoenix-1.47/ConsoleLogger.pyc and phoenix-1.47-modified/ConsoleLogger.pyc differ
+Binary files phoenix-1.47/kernels/poclbm/167c418e01275326142dd6e832cab098.elf and phoenix-1.47-modified/kernels/poclbm/167c418e01275326142dd6e832cab098.elf differ
+diff -ur phoenix-1.47/phoenix.py phoenix-1.47-modified/phoenix.py
+--- phoenix-1.47/phoenix.py	2011-05-13 06:43:53.000000000 +0300
++++ phoenix-1.47-modified/phoenix.py	2011-05-26 20:26:39.000000000 +0300
+@@ -44,6 +44,7 @@
+         self.connection = None
+         self.kernel = None
+         self.queue = None
++        self.logtotext = None
+         
+         self.kernelOptions = {}
+         
+@@ -62,6 +63,7 @@
+         parser.add_option("-a", "--avgsamples", dest="avgsamples", type="int",
+             default=10,
+             help="how many samples to use for hashrate average")
++        parser.add_option("-t", "--logtotext", dest="logtotext", default=None, help="Log to text")
+         
+         self.parsedSettings, args = parser.parse_args()
+         
+@@ -88,7 +90,7 @@
+     
+     def makeLogger(self, requester):
+         if not self.logger:
+-            self.logger = ConsoleLogger(self.parsedSettings.verbose)
++            self.logger = ConsoleLogger(self.parsedSettings.verbose, self.parsedSettings.logtotext)
+         return self.logger
+     
+     def makeConnection(self, requester):
