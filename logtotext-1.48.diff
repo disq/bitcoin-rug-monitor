@@ -1,0 +1,56 @@
+diff -ur phoenix-1.48/ConsoleLogger.py phoenix-1.48-logtotext/ConsoleLogger.py
+--- phoenix-1.48/ConsoleLogger.py	2011-05-18 11:48:47.000000000 +0300
++++ phoenix-1.48-logtotext/ConsoleLogger.py	2011-05-28 14:21:33.000000000 +0300
+@@ -47,10 +47,11 @@
+     
+     UPDATE_TIME = 1.0
+     
+-    def __init__(self, miner, verbose=False): 
++    def __init__(self, miner, verbose=False, logtotext=None): 
+         self.verbose = verbose
+         self.miner = miner
+         self.lastUpdate = time() - 1
++        self.logtotext = logtotext
+         self.rate = 0
+         self.accepted = 0
+         self.invalid = 0
+@@ -111,6 +112,10 @@
+                 "[" + str(self.accepted) + " Accepted] "
+                 "[" + str(self.invalid) + " Rejected]" + type)
+             self.say(status)
++            if(self.logtotext != None):
++                fileHandle = open (self.logtotext, 'w')
++                fileHandle.write(datetime.now().strftime(self.TIME_FORMAT) + ' ' + status)
++                fileHandle.close()
+             self.lastUpdate = time()
+         
+     def say(self, message, newLine=False, hideTimestamp=False):
+Only in phoenix-1.48-logtotext: logtotext.diff
+diff -ur phoenix-1.48/phoenix.py phoenix-1.48-logtotext/phoenix.py
+--- phoenix-1.48/phoenix.py	2011-05-18 11:48:47.000000000 +0300
++++ phoenix-1.48-logtotext/phoenix.py	2011-05-28 14:22:07.000000000 +0300
+@@ -44,6 +44,7 @@
+         self.connection = None
+         self.kernel = None
+         self.queue = None
++        self.logtotext = None
+         
+         self.kernelOptions = {}
+         
+@@ -62,6 +63,7 @@
+         parser.add_option("-a", "--avgsamples", dest="avgsamples", type="int",
+             default=10,
+             help="how many samples to use for hashrate average")
++        parser.add_option("-t", "--logtotext", dest="logtotext", default=None, help="Log to text")
+         
+         self.parsedSettings, args = parser.parse_args()
+         
+@@ -88,7 +90,7 @@
+     
+     def makeLogger(self, requester, miner):
+         if not self.logger:
+-            self.logger = ConsoleLogger(miner, self.parsedSettings.verbose)
++            self.logger = ConsoleLogger(miner, self.parsedSettings.verbose, self.parsedSettings.logtotext)
+         return self.logger
+     
+     def makeConnection(self, requester):
