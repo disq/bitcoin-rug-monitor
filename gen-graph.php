@@ -6,7 +6,6 @@ $cfg = readConfig(array('rrddir', 'graphdir', 'otherdir'));
 
 $allcfg = array();
 $allcfg[] = array('id'=>$cfg['id'], 'name'=>$cfg['name'], 'adapters'=>$cfg['adapters'], 'rrddir'=>$cfg['rrddir']);
-$alladapters = $cfg['adapters'];
 
 $dirs = @scandir($cfg['otherdir']);
 if (is_array($dirs)) foreach($dirs as $dir)
@@ -31,7 +30,6 @@ if (is_array($dirs)) foreach($dirs as $dir)
 		}
 
 	$allcfg[] = array('id'=>$tmp['id'], 'name'=>$tmp['name'], 'adapters'=>$tmp['adapters'], 'rrddir'=>$realdir.'/rrd');
-	$alladapters = array_merge($alladapters, $tmp['adapters']);
 	}
 
 function graph_internal($cfg, $fn, $fnSuffix, $extraOpts, $data, $wm='rug-monitor')
@@ -70,7 +68,7 @@ if ($id>=count($colorwheel)) $id=0;
 return($colorwheel[$ourid]);
 }
 
-function doGraph($cfg, $allcfg, $alladapters, $fnSuffix='', $extraOpts='')
+function doGraph($cfg, $allcfg, $fnSuffix='', $extraOpts='')
 {
 $stacks = array('hashrate'=>array('Hashrate',' %s'), 'load'=>array('GPU Load', ' %%'));
 
@@ -85,7 +83,7 @@ foreach($stacks as $ds=>$dsdata)
 			{
 			if (isOff($adapter['rrd'])) continue;
 			$fn = getRrdFile($adapter);
-			$dfn = $cfg['rrddir'].'/'.$fn;
+			$dfn = $rig['rrddir'].'/'.$fn;
 			if (!file_exists($dfn)) continue;
 			$def[] = 'DEF:'.$ds.$adapter['id'].'='.$dfn.':'.$ds.':AVERAGE';
 			$cdef[] = 'CDEF:'.$ds.'u'.$adapter['id'].'='.$ds.$adapter['id'].',UN,0,'.$ds.$adapter['id'].',IF';
@@ -105,22 +103,25 @@ foreach($stacks as $ds=>$dsdata)
 	$def = $cdef = $gr = $gr2 = $gp = array();
 	$first = true;
 	$unid = 0;
-	foreach($alladapters as $adapter)
+	foreach($allcfg as $rig)
 		{
-		if (isOff($adapter['rrd'])) continue;
-		$fn = getRrdFile($adapter);
-		$dfn = $cfg['rrddir'].'/'.$fn;
-		if (!file_exists($dfn)) continue;
-		$def[] = 'DEF:'.$ds.$unid.'='.$dfn.':'.$ds.':AVERAGE';
-		$cdef[] = 'CDEF:'.$ds.'u'.$unid.'='.$ds.$unid.',UN,0,'.$ds.$unid.',IF';
-		$cdef[] = 'VDEF:'.$ds.'x'.$unid.'='.$ds.$unid.',LAST';
-		$col = getColor($first);
-		$gr[] = 'AREA:'.$ds.'u'.$unid.$col.'C0:'.($first?'':':STACK');
-		$gr2[] = 'LINE2:'.$ds.'u'.$unid.$col.':"'.$adapter['nameP'].'"'.($first?'':':STACK');
-		$gr2[] = 'GPRINT:'.$ds.'x'.$unid.':"%4.2lf'.$dsdata[1].'\c"';
+		foreach($rig['adapters'] as $adapter)
+			{
+			if (isOff($adapter['rrd'])) continue;
+			$fn = getRrdFile($adapter);
+			$dfn = $rig['rrddir'].'/'.$fn;
+			if (!file_exists($dfn)) continue;
+			$def[] = 'DEF:'.$ds.$unid.'='.$dfn.':'.$ds.':AVERAGE';
+			$cdef[] = 'CDEF:'.$ds.'u'.$unid.'='.$ds.$unid.',UN,0,'.$ds.$unid.',IF';
+			$cdef[] = 'VDEF:'.$ds.'x'.$unid.'='.$ds.$unid.',LAST';
+			$col = getColor($first);
+			$gr[] = 'AREA:'.$ds.'u'.$unid.$col.'C0:'.($first?'':':STACK');
+			$gr2[] = 'LINE2:'.$ds.'u'.$unid.$col.':"'.$adapter['nameP'].'"'.($first?'':':STACK');
+			$gr2[] = 'GPRINT:'.$ds.'x'.$unid.':"%4.2lf'.$dsdata[1].'\c"';
 
-		$first = false;
-		$unid++;
+			$first = false;
+			$unid++;
+			}
 		}
 	
 	graph_internal($cfg, $ds.'_bydevice', $fnSuffix, $extraOpts, '-t "'.$dsdata[0].'" '.implode(' ', $def).' '.implode(' ', $cdef).' '.implode(' ', $gr).' '.implode(' ', $gr2).' '.implode(' ', $gp));
@@ -136,7 +137,7 @@ foreach($stacks as $ds=>$dsdata)
 			{
 			if (isOff($adapter['rrd'])) continue;
 			$fn = getRrdFile($adapter);
-			$dfn = $cfg['rrddir'].'/'.$fn;
+			$dfn = $rig['rrddir'].'/'.$fn;
 			if (!file_exists($dfn)) continue;
 			$def[] = 'DEF:'.$ds.$rigid.'_'.$unid.'='.$dfn.':'.$ds.':AVERAGE';
 			$cdef[] = 'CDEF:'.$ds.'u'.$rigid.'_'.$unid.'='.$ds.$rigid.'_'.$unid.',UN,0,'.$ds.$rigid.'_'.$unid.',IF';
@@ -207,26 +208,29 @@ foreach($allcfg as $rig)
 $def = $cdef = $gr = $gr2 = $gp = array();
 $first = true;
 $unid = 0;
-foreach($alladapters as $adapter)
+foreach($allcfg as $rig)
 	{
-	if (isOff($adapter['rrd'])) continue;
-	$fn = getRrdFile($adapter);
-	$dfn = $cfg['rrddir'].'/'.$fn;
-	if (!file_exists($dfn)) continue;
-	$def[] = 'DEF:acc'.$unid.'='.$dfn.':accepted:AVERAGE:step=600';
-	$def[] = 'DEF:rej'.$unid.'='.$dfn.':rejected:AVERAGE:step=600';
-	$cdef[] = 'CDEF:accu'.$unid.'=acc'.$unid.',UN,0,acc'.$unid.',IF';
-	$cdef[] = 'CDEF:reju'.$unid.'=rej'.$unid.',UN,0,rej'.$unid.',IF';
-	$cdef[] = 'CDEF:rejn'.$unid.'=reju'.$unid.',-1,*';
-	$col = getColor($first);
+	foreach($rig['adapters'] as $adapter)
+		{
+		if (isOff($adapter['rrd'])) continue;
+		$fn = getRrdFile($adapter);
+		$dfn = $rig['rrddir'].'/'.$fn;
+		if (!file_exists($dfn)) continue;
+		$def[] = 'DEF:acc'.$unid.'='.$dfn.':accepted:AVERAGE:step=600';
+		$def[] = 'DEF:rej'.$unid.'='.$dfn.':rejected:AVERAGE:step=600';
+		$cdef[] = 'CDEF:accu'.$unid.'=acc'.$unid.',UN,0,acc'.$unid.',IF';
+		$cdef[] = 'CDEF:reju'.$unid.'=rej'.$unid.',UN,0,rej'.$unid.',IF';
+		$cdef[] = 'CDEF:rejn'.$unid.'=reju'.$unid.',-1,*';
+		$col = getColor($first);
 
-	$gr[] = 'AREA:accu'.$unid.$col.':"'.$adapter['name'].'"'.($first?'':':STACK');
-	if ($first) $gr2[] = 'COMMENT:\\s';
-//	$gr2[] = 'AREA:rejn'.$unid.$col.'80:"Rejected"'.($first?'':':STACK');
-	$gr2[] = 'AREA:rejn'.$unid.$col.'80:'.($first?'':':STACK');
+		$gr[] = 'AREA:accu'.$unid.$col.':"'.$adapter['name'].'"'.($first?'':':STACK');
+		if ($first) $gr2[] = 'COMMENT:\\s';
+	//	$gr2[] = 'AREA:rejn'.$unid.$col.'80:"Rejected"'.($first?'':':STACK');
+		$gr2[] = 'AREA:rejn'.$unid.$col.'80:'.($first?'':':STACK');
 
-	$first = false;
-	$unid++;
+		$first = false;
+		$unid++;
+		}
 	}
 
 graph_internal($cfg, 'shares_bydevice', $fnSuffix, $extraOpts, '--vertical-label "Shares" -t "Shares Submitted" '.implode(' ', $def).' '.implode(' ', $cdef).' '.implode(' ', $gp).' '.implode(' ', $gr).' '.implode(' ', $gr2));
@@ -277,18 +281,7 @@ foreach($allcfg as $rig)
 
 //void main ;)
 
-$maxlen = 0;
-foreach($alladapters as $adapter)
-	{
-	$l = strlen($adapter['name']);
-	if ($l > $maxlen) $maxlen = $l;
-	}
-foreach($alladapters as $i=>$adapter)
-	{
-	$l = strlen($adapter['name']);
-	$alladapters[$i]['nameP'] = $adapter['name'].($l < $maxlen?str_repeat(' ', $maxlen-$l):'');
-	}
-$rmaxlen = 0;
+$maxlen = $rmaxlen = 0;
 $ridlist = array();
 foreach($allcfg as $i=>$rig)
 	{
@@ -298,9 +291,8 @@ foreach($allcfg as $i=>$rig)
 	foreach($rig['adapters'] as $j=>$adapter)
 		{
 		$l = strlen($adapter['name']);
-		$rig['adapters'][$j]['nameP'] = $adapter['name'].($l < $maxlen?str_repeat(' ', $maxlen-$l):'');
+		if ($l > $maxlen) $maxlen = $l;
 		}
-	$allcfg[$i] = $rig;
 	if ($rig['id']!='') $ridlist[] = $rig['id'];
 	}
 
@@ -308,28 +300,35 @@ $ridcnt = 1;
 foreach($allcfg as $i=>$rig)
 	{
 	$l = strlen($rig['name']);
-	$allcfg[$i]['nameP'] = $rig['name'].($l < $rmaxlen?str_repeat(' ', $rmaxlen-$l):'');
+	$rig['nameP'] = $rig['name'].($l < $rmaxlen?str_repeat(' ', $rmaxlen-$l):'');
 	if ($rig['id']=='')
 		{
 		while(in_array($ridcnt, $ridlist)) $ridcnt++;
 		$ridlist[] = $ridcnt;
-		$allcfg[$i]['id'] = 'rig'.$ridcnt;
+		$rig['id'] = 'rig'.$ridcnt;
 		}
-	else if (is_numeric($rig['id'])) $allcfg[$i]['id'] = 'rig'.$rig['id'];
+	else if (is_numeric($rig['id'])) $rig['id'] = 'rig'.$rig['id'];
+
+	foreach($rig['adapters'] as $j=>$adapter)
+		{
+		$l = strlen($adapter['name']);
+		$rig['adapters'][$j]['nameP'] = $adapter['name'].($l < $maxlen?str_repeat(' ', $maxlen-$l):'');
+		}
+	$allcfg[$i] = $rig;
 	}
 
-doGraph($cfg, $allcfg, $alladapters, '-0');
+doGraph($cfg, $allcfg, '-0');
 
 if ($_SERVER['argv'][1] == 'all')
 	{
-	doGraph($cfg, $allcfg, $alladapters, '-1', '--start -2d --end -1d');
-	doGraph($cfg, $allcfg, $alladapters, '-2', '--start -3d --end -2d');
-	doGraph($cfg, $allcfg, $alladapters, '-3', '--start -4d --end -3d');
-	doGraph($cfg, $allcfg, $alladapters, '-4', '--start -5d --end -4d');
-	doGraph($cfg, $allcfg, $alladapters, '-5', '--start -6d --end -5d');
-	doGraph($cfg, $allcfg, $alladapters, '-6', '--start -7d --end -6d');
-	doGraph($cfg, $allcfg, $alladapters, '-w', '--start -1w');
-	doGraph($cfg, $allcfg, $alladapters, '-m', '--start -1m');
+	doGraph($cfg, $allcfg, '-1', '--start -2d --end -1d');
+	doGraph($cfg, $allcfg, '-2', '--start -3d --end -2d');
+	doGraph($cfg, $allcfg, '-3', '--start -4d --end -3d');
+	doGraph($cfg, $allcfg, '-4', '--start -5d --end -4d');
+	doGraph($cfg, $allcfg, '-5', '--start -6d --end -5d');
+	doGraph($cfg, $allcfg, '-6', '--start -7d --end -6d');
+	doGraph($cfg, $allcfg, '-w', '--start -1w');
+	doGraph($cfg, $allcfg, '-m', '--start -1m');
 	}
 
 die("\n");
