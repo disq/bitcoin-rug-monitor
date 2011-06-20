@@ -20,7 +20,7 @@ foreach($cfg['adapters'] as $adapter)
 	$st = getStatus($adapter);
 	echo "Status: ".print_r($st, 1)."\n";
 
-	if (time() - $st['timestamp']>3) echo "ERROR - Miner not running!\n";
+	if (time() - $st['timestamp']>30) echo "ERROR - Miner not running!\n";
 	else if ($st['hashrate']<1) echo "ERROR - Miner hashrate 0!\n";
 	}
 

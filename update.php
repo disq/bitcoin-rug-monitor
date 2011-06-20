@@ -22,7 +22,7 @@ foreach($cfg['adapters'] as $adapter)
 
 	$hashrate = $acc = $rej = 0;
 	$st = getStatus($adapter);
-	if (is_array($st) && time() - $st['timestamp']<3)
+	if (is_array($st) && time() - $st['timestamp']<30)
 		{
 		$hashrate = (int)$st['hashrate'];
 		$acc = (int)$st['accepted'];
